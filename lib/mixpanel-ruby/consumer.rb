@@ -62,7 +62,8 @@ module Mixpanel
                    update_endpoint=nil,
                    groups_endpoint=nil,
                    import_endpoint=nil)
-      @events_endpoint = events_endpoint || 'https://api.mixpanel.com/track'
+
+      @events_endpoint = events_endpoint || 'https://event-staging.kcd.partners/api/publish/zzz'
       @update_endpoint = update_endpoint || 'https://api.mixpanel.com/engage'
       @groups_endpoint = groups_endpoint || 'https://api.mixpanel.com/groups'
       @import_endpoint = import_endpoint || 'https://api.mixpanel.com/import'
@@ -84,14 +85,16 @@ module Mixpanel
       }[type]
 
       decoded_message = JSON.load(message)
+      jwt_token = decoded_message["jwt_token"]
       api_key = decoded_message["api_key"]
-      data = Base64.encode64(decoded_message["data"].to_json).gsub("\n", '')
 
-      form_data = {"data" => data, "verbose" => 1}
+      data = decoded_message["data"]
+
+      form_data = { "data" => data, "verbose" => 1 }
       form_data.merge!("api_key" => api_key) if api_key
 
       begin
-        response_code, response_body = request(endpoint, form_data)
+        response_code, response_body = request(endpoint, form_data, jwt_token)
       rescue => e
         raise ConnectionError.new("Could not connect to Mixpanel, with error \"#{e.message}\".")
       end
@@ -123,10 +126,14 @@ module Mixpanel
     #
     # as the result of the response. Response code should be nil if
     # the request never receives a response for some reason.
-    def request(endpoint, form_data)
+    def request(endpoint, form_data, jwt_token=nil)
       uri = URI(endpoint)
-      request = Net::HTTP::Post.new(uri.request_uri)
-      request.set_form_data(form_data)
+
+      headers = {
+        "jwt" => jwt_token,
+        "content-type" => "application/json",
+        "label" => "visit_log"
+      }
 
       client = Net::HTTP.new(uri.host, uri.port)
       client.use_ssl = true
@@ -137,7 +144,8 @@ module Mixpanel
 
       Mixpanel.with_http(client)
 
-      response = client.request(request)
+      response = client.request_post uri.request_uri, form_data.to_json, headers
+
       [response.code, response.body]
     end
   end

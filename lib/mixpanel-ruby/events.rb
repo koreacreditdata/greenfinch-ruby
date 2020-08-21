@@ -54,7 +54,6 @@ module Mixpanel
     def track(distinct_id, event, properties={}, ip=nil)
       properties = {
         'distinct_id' => distinct_id,
-        'token' => @token,
         'time' => Time.now.to_i,
         'mp_lib' => 'ruby',
         '$lib_version' => Mixpanel::VERSION,
@@ -66,9 +65,13 @@ module Mixpanel
         'properties' => properties,
       }
 
-      message = {'data' => data}
+      message = {
+        'data' => data,
+        'jwt_token' => @token,
+      }
 
       ret = true
+
       begin
         @sink.call(:event, message.to_json)
       rescue MixpanelError => e
