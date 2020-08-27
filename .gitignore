@@ -1,6 +1,6 @@
 *~
 Gemfile.lock
 html
-mixpanel-ruby*.gem
+greenfinch-ruby*.gem
 .bundle
 .idea
