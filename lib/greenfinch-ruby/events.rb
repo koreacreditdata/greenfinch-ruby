@@ -1,29 +1,31 @@
 require 'time'
 
-require 'mixpanel-ruby/consumer'
-require 'mixpanel-ruby/error'
+require 'greenfinch-ruby/consumer'
+require 'greenfinch-ruby/error'
 
-module Mixpanel
+module Greenfinch
 
-  # Handles formatting Mixpanel event tracking messages
-  # and sending them to the consumer. Mixpanel::Tracker
+  # Handles formatting Greenfinch event tracking messages
+  # and sending them to the consumer. Greenfinch::Tracker
   # is a subclass of this class, and the best way to
-  # track events is to instantiate a Mixpanel::Tracker
+  # track events is to instantiate a Greenfinch::Tracker
   #
-  #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN) # Has all of the methods of Mixpanel::Event
+  #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN) # Has all of the methods of Greenfinch::Event
   #     tracker.track(...)
   #
   class Events
 
     # You likely won't need to instantiate an instance of
-    # Mixpanel::Events directly. The best way to get an instance
-    # is to use Mixpanel::Tracker
+    # Greenfinch::Events directly. The best way to get an instance
+    # is to use Greenfinch::Tracker
     #
-    #     # tracker has all of the methods of Mixpanel::Events
-    #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #     # tracker has all of the methods of Greenfinch::Events
+    #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
-    def initialize(token, error_handler=nil, &block)
+    def initialize(token, service_name, debug, error_handler=nil, &block)
       @token = token
+      @service_name = service_name
+      @debug = debug
       @error_handler = error_handler || ErrorHandler.new
 
       if block
@@ -40,7 +42,7 @@ module Mixpanel
     # describing that event. Properties are provided as a Hash with
     # string keys and strings, numbers or booleans as values.
     #
-    #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
     #     # Track that user "12345"'s credit card was declined
     #     tracker.track("12345", "Credit Card Declined")
@@ -53,28 +55,30 @@ module Mixpanel
     #     })
     def track(distinct_id, event, properties={}, ip=nil)
       properties = {
-        'distinct_id' => distinct_id,
+        'user_id' => distinct_id,
         'time' => Time.now.to_i,
         'mp_lib' => 'ruby',
-        '$lib_version' => Mixpanel::VERSION,
+        '$lib_version' => Greenfinch::VERSION,
       }.merge(properties)
       properties['ip'] = ip if ip
 
       data = {
         'event' => event,
-        'properties' => properties,
+        'prop' => properties,
       }
 
       message = {
         'data' => data,
         'jwt_token' => @token,
+        'service_name' => @service_name,
+        'debug' => @debug
       }
 
       ret = true
 
       begin
         @sink.call(:event, message.to_json)
-      rescue MixpanelError => e
+      rescue GreenfinchError => e
         @error_handler.handle(e)
         ret = false
       end
@@ -90,7 +94,7 @@ module Mixpanel
     # we pass the time of the method call as the time the event occured, if you
     # wish to override this pass a timestamp in the properties hash.
     #
-    #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
     #     # Track that user "12345"'s credit card was declined
     #     tracker.import("API_KEY", "12345", "Credit Card Declined")
@@ -108,7 +112,7 @@ module Mixpanel
         'token' => @token,
         'time' => Time.now.to_i,
         'mp_lib' => 'ruby',
-        '$lib_version' => Mixpanel::VERSION,
+        '$lib_version' => Greenfinch::VERSION,
       }.merge(properties)
       properties['ip'] = ip if ip
 
@@ -125,7 +129,7 @@ module Mixpanel
       ret = true
       begin
         @sink.call(:import, message.to_json)
-      rescue MixpanelError => e
+      rescue GreenfinchError => e
         @error_handler.handle(e)
         ret = false
       end

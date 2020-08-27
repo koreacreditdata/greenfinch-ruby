@@ -2,7 +2,7 @@ require 'base64'
 require 'json'
 require 'net/https'
 
-module Mixpanel
+module Greenfinch
   @@init_http = nil
 
   # This method exists for backwards compatibility. The preferred
@@ -11,31 +11,31 @@ module Mixpanel
   #
   # Ruby's default SSL does not verify the server certificate.
   # To verify a certificate, or install a proxy, pass a block
-  # to Mixpanel.config_http that configures the Net::HTTP object.
+  # to Greenfinch.config_http that configures the Net::HTTP object.
   # For example, if running in Ubuntu Linux, you can run
   #
-  #    Mixpanel.config_http do |http|
+  #    Greenfinch.config_http do |http|
   #        http.ca_path = '/etc/ssl/certs'
   #        http.ca_file = '/etc/ssl/certs/ca-certificates.crt'
   #        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
   #    end
   #
-  # \Mixpanel Consumer and BufferedConsumer will call your block
+  # \Greenfinch Consumer and BufferedConsumer will call your block
   # to configure their connections
   def self.config_http(&block)
     @@init_http = block
   end
 
-  # A Consumer receives messages from a Mixpanel::Tracker, and
-  # sends them elsewhere- probably to Mixpanel's analytics services,
+  # A Consumer receives messages from a Greenfinch::Tracker, and
+  # sends them elsewhere- probably to Greenfinch's analytics services,
   # but can also enqueue them for later processing, log them to a
   # file, or do whatever else you might find useful.
   #
-  # You can provide your own consumer to your Mixpanel::Trackers,
+  # You can provide your own consumer to your Greenfinch::Trackers,
   # either by passing in an argument with a #send! method when you construct
-  # the tracker, or just passing a block to Mixpanel::Tracker.new
+  # the tracker, or just passing a block to Greenfinch::Tracker.new
   #
-  #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN) do |type, message|
+  #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN) do |type, message|
   #        # type will be one of :event, :profile_update or :import
   #        @kestrel.set(ANALYTICS_QUEUE, [type, message].to_json)
   #    end
@@ -44,18 +44,18 @@ module Mixpanel
   # them wherever you would like. For example, the working that
   # consumes the above queue might work like this:
   #
-  #     mixpanel = Mixpanel::Consumer
+  #     greenfinch = Greenfinch::Consumer
   #     while true
   #         message_json = @kestrel.get(ANALYTICS_QUEUE)
-  #         mixpanel.send!(*JSON.load(message_json))
+  #         greenfinch.send!(*JSON.load(message_json))
   #     end
   #
-  # Mixpanel::Consumer is the default consumer. It sends each message,
-  # as the message is recieved, directly to Mixpanel.
+  # Greenfinch::Consumer is the default consumer. It sends each message,
+  # as the message is recieved, directly to Greenfinch.
   class Consumer
 
-    # Create a Mixpanel::Consumer. If you provide endpoint arguments,
-    # they will be used instead of the default Mixpanel endpoints.
+    # Create a Greenfinch::Consumer. If you provide endpoint arguments,
+    # they will be used instead of the default Greenfinch endpoints.
     # This can be useful for proxying, debugging, or if you prefer
     # not to use SSL for your events.
     def initialize(events_endpoint=nil,
@@ -63,18 +63,18 @@ module Mixpanel
                    groups_endpoint=nil,
                    import_endpoint=nil)
 
-      @events_endpoint = events_endpoint || 'https://event-staging.kcd.partners/api/publish/zzz'
-      @update_endpoint = update_endpoint || 'https://api.mixpanel.com/engage'
-      @groups_endpoint = groups_endpoint || 'https://api.mixpanel.com/groups'
-      @import_endpoint = import_endpoint || 'https://api.mixpanel.com/import'
+      @events_endpoint = events_endpoint || 'https://event.kcd.partners/api/publish'
+      @update_endpoint = update_endpoint || 'https://api.greenfinch.com/engage'
+      @groups_endpoint = groups_endpoint || 'https://api.greenfinch.com/groups'
+      @import_endpoint = import_endpoint || 'https://api.greenfinch.com/import'
     end
 
-    # Send the given string message to Mixpanel. Type should be
+    # Send the given string message to Greenfinch. Type should be
     # one of :event, :profile_update or :import, which will determine the endpoint.
     #
-    # Mixpanel::Consumer#send! sends messages to Mixpanel immediately on
+    # Greenfinch::Consumer#send! sends messages to Greenfinch immediately on
     # each call. To reduce the overall bandwidth you use when communicating
-    # with Mixpanel, you can also use Mixpanel::BufferedConsumer
+    # with Greenfinch, you can also use Greenfinch::BufferedConsumer
     def send!(type, message)
       type = type.to_sym
       endpoint = {
@@ -86,17 +86,21 @@ module Mixpanel
 
       decoded_message = JSON.load(message)
       jwt_token = decoded_message["jwt_token"]
-      api_key = decoded_message["api_key"]
+      service_name = decoded_message["service_name"]
+      debug = decoded_message["debug"]
 
-      data = decoded_message["data"]
+      if debug == true
+        endpoint = "https://event-staging.kcd.partners/api/publish/#{service_name}"
+      else
+        endpoint = "#{endpoint}/#{service_name}"
+      end
 
-      form_data = { "data" => data, "verbose" => 1 }
-      form_data.merge!("api_key" => api_key) if api_key
+      form_data = decoded_message["data"]
 
       begin
         response_code, response_body = request(endpoint, form_data, jwt_token)
       rescue => e
-        raise ConnectionError.new("Could not connect to Mixpanel, with error \"#{e.message}\".")
+        raise ConnectionError.new("Could not connect to Greenfinch, with error \"#{e.message}\".")
       end
 
       result = {}
@@ -104,12 +108,10 @@ module Mixpanel
         begin
           result = JSON.parse(response_body.to_s)
         rescue JSON::JSONError
-          raise ServerError.new("Could not interpret Mixpanel server response: '#{response_body}'")
+          raise ServerError.new("Could not interpret Greenfinch server response: '#{response_body}'")
         end
-      end
-
-      if result['status'] != 1
-        raise ServerError.new("Could not write to Mixpanel, server responded with #{response_code} returning: '#{response_body}'")
+      else
+        raise ServerError.new("Could not write to Greenfinch, server responded with #{response_code} returning: '#{response_body}'")
       end
     end
 
@@ -132,7 +134,7 @@ module Mixpanel
       headers = {
         "jwt" => jwt_token,
         "content-type" => "application/json",
-        "label" => "visit_log"
+        "label" => "ruby"
       }
 
       client = Net::HTTP.new(uri.host, uri.port)
@@ -142,7 +144,7 @@ module Mixpanel
       client.read_timeout = 10
       client.ssl_timeout = 10
 
-      Mixpanel.with_http(client)
+      Greenfinch.with_http(client)
 
       response = client.request_post uri.request_uri, form_data.to_json, headers
 
@@ -156,12 +158,12 @@ module Mixpanel
   # should call #flush when your application exits or the messages
   # remaining in the buffer will not be sent.
   #
-  # To use a BufferedConsumer directly with a Mixpanel::Tracker,
+  # To use a BufferedConsumer directly with a Greenfinch::Tracker,
   # instantiate your Tracker like this
   #
-  #    buffered_consumer = Mixpanel::BufferedConsumer.new
+  #    buffered_consumer = Greenfinch::BufferedConsumer.new
   #    begin
-  #        buffered_tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN) do |type, message|
+  #        buffered_tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN) do |type, message|
   #            buffered_consumer.send!(type, message)
   #        end
   #        # Do some tracking here
@@ -173,21 +175,21 @@ module Mixpanel
   class BufferedConsumer
     MAX_LENGTH = 50
 
-    # Create a Mixpanel::BufferedConsumer. If you provide endpoint arguments,
-    # they will be used instead of the default Mixpanel endpoints.
+    # Create a Greenfinch::BufferedConsumer. If you provide endpoint arguments,
+    # they will be used instead of the default Greenfinch endpoints.
     # This can be useful for proxying, debugging, or if you prefer
     # not to use SSL for your events.
     #
     # You can also change the preferred buffer size before the
-    # consumer automatically sends its buffered events. The Mixpanel
+    # consumer automatically sends its buffered events. The Greenfinch
     # endpoints have a limit of 50 events per HTTP request, but
     # you can lower the limit if your individual events are very large.
     #
-    # By default, BufferedConsumer will use a standard Mixpanel
+    # By default, BufferedConsumer will use a standard Greenfinch
     # consumer to send the events once the buffer is full (or on calls
     # to #flush), but you can override this behavior by passing a
     # block to the constructor, in the same way you might pass a block
-    # to the Mixpanel::Tracker constructor. If a block is passed to
+    # to the Greenfinch::Tracker constructor. If a block is passed to
     # the constructor, the *_endpoint constructor arguments are
     # ignored.
     def initialize(events_endpoint=nil, update_endpoint=nil, import_endpoint=nil, max_buffer_length=MAX_LENGTH, &block)
@@ -205,7 +207,7 @@ module Mixpanel
       end
     end
 
-    # Stores a message for Mixpanel in memory. When the buffer
+    # Stores a message for Greenfinch in memory. When the buffer
     # hits a maximum length, the consumer will flush automatically.
     # Flushes are synchronous when they occur.
     #
@@ -228,7 +230,7 @@ module Mixpanel
         send!(type, message)
     end
 
-    # Pushes all remaining messages in the buffer to Mixpanel.
+    # Pushes all remaining messages in the buffer to Greenfinch.
     # You should call #flush before your application exits or
     # messages may not be sent.
     def flush

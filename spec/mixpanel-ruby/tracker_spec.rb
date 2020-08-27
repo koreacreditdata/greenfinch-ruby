@@ -1,7 +1,7 @@
 require 'base64'
 require 'cgi'
 require 'json'
-require 'mixpanel-ruby'
+require 'greenfinch-ruby'
 require 'uri'
 
 describe Mixpanel::Tracker do

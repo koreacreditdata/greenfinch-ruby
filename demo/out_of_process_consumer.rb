@@ -1,4 +1,4 @@
-require 'mixpanel-ruby'
+require 'greenfinch-ruby'
 require 'thread'
 require 'json'
 require 'securerandom'

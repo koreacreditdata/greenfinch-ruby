@@ -1,27 +1,27 @@
-module Mixpanel
+module Greenfinch
 
-  # Mixpanel specific errors that are thrown in the gem.
+  # Greenfinch specific errors that are thrown in the gem.
   # In the default consumer we catch all errors and raise
-  # Mixpanel specific errors that can be handled using a
+  # Greenfinch specific errors that can be handled using a
   # custom error handler.
-  class MixpanelError < StandardError
+  class GreenfinchError < StandardError
   end
   
-  class ConnectionError < MixpanelError
+  class ConnectionError < GreenfinchError
   end
   
-  class ServerError < MixpanelError
+  class ServerError < GreenfinchError
   end
 
 
   # The default behavior of the gem is to silence all errors
-  # thrown in the consumer.  If you wish to handle MixpanelErrors
+  # thrown in the consumer.  If you wish to handle GreenfinchErrors
   # yourself you can pass an instance of a class that extends
-  # Mixpanel::ErrorHandler to Mixpanel::Tracker on initialize.
+  # Greenfinch::ErrorHandler to Greenfinch::Tracker on initialize.
   #
   #    require 'logger'
   #
-  #    class MyErrorHandler < Mixpanel::ErrorHandler
+  #    class MyErrorHandler < Greenfinch::ErrorHandler
   #
   #      def initialize
   #        @logger = Logger.new('mylogfile.log')
@@ -35,7 +35,7 @@ module Mixpanel
   #    end
   #
   #    my_error_handler = MyErrorHandler.new
-  #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN, my_error_handler)
+  #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN, my_error_handler)
   class ErrorHandler
 
     # Override #handle to customize error handling

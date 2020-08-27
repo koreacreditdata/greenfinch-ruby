@@ -1,4 +1,4 @@
-require 'mixpanel-ruby'
+require 'greenfinch-ruby'
 require 'faraday'
 
 # The Mixpanel library's default consumer will use the standard

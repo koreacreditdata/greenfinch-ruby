@@ -2,25 +2,25 @@ require 'date'
 require 'json'
 require 'time'
 
-require 'mixpanel-ruby/consumer'
-require 'mixpanel-ruby/error'
+require 'greenfinch-ruby/consumer'
+require 'greenfinch-ruby/error'
 
-module Mixpanel
+module Greenfinch
 
-  # Handles formatting Mixpanel group updates and
+  # Handles formatting Greenfinch group updates and
   # sending them to the consumer. You will rarely need
   # to instantiate this class directly- to send
-  # group updates, use Mixpanel::Tracker#groups
+  # group updates, use Greenfinch::Tracker#groups
   #
-  #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+  #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
   #     tracker.groups.set(...) or .set_once(..), or .delete(...) etc.
   class Groups
 
-    # You likely won't need to instantiate instances of Mixpanel::Groups
-    # directly. The best way to get an instance of Mixpanel::Groups is
+    # You likely won't need to instantiate instances of Greenfinch::Groups
+    # directly. The best way to get an instance of Greenfinch::Groups is
     #
-    #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
-    #     tracker.groups # An instance of Mixpanel::Groups
+    #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
+    #     tracker.groups # An instance of Greenfinch::Groups
     #
     def initialize(token, error_handler=nil, &block)
       @token = token
@@ -38,7 +38,7 @@ module Mixpanel
     # keys, and values that are strings, numbers, booleans, or
     # DateTimes
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    # Sets properties on group with id "1234"
     #    tracker.groups.set("GROUP KEY", "1234", {
     #        'company' => 'Acme',
@@ -46,7 +46,7 @@ module Mixpanel
     #        'Sign-Up Date' => DateTime.now
     #    });
     #
-    # If you provide an ip argument, \Mixpanel will use that
+    # If you provide an ip argument, \Greenfinch will use that
     # ip address for geolocation (rather than the ip of your server)
     def set(group_key, group_id, properties, ip=nil, optional_params={})
       properties = fix_property_dates(properties)
@@ -65,7 +65,7 @@ module Mixpanel
     # in the group. That means you can call set_once many times
     # without changing an original value.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    tracker.groups.set_once("GROUP KEY", "1234", {
     #        'First Login Date': DateTime.now
     #    });
@@ -84,7 +84,7 @@ module Mixpanel
 
     # Removes a specific value in a list property
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
     #    # removes "socks" from the "Items purchased" list property
     #    # for the specified group
@@ -108,7 +108,7 @@ module Mixpanel
     # property. After a union, every element in the list associated
     # with a property will be unique.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    tracker.groups.union("GROUP KEY", "1234", {
     #        'Levels Completed' => ['Suffragette City']
     #    });
@@ -127,7 +127,7 @@ module Mixpanel
 
     # Removes properties and their values from a group.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
     #    # removes a single property and its value from a group
     #    tracker.groups.unset("GROUP KEY", "1234", "Overdue Since")
@@ -149,7 +149,7 @@ module Mixpanel
       update(message)
     end
 
-    # Permanently delete a group from \Mixpanel groups analytics (all group
+    # Permanently delete a group from \Greenfinch groups analytics (all group
     # properties on events stay)
     def delete_group(group_key, group_id, optional_params={})
       update({
@@ -159,14 +159,14 @@ module Mixpanel
       }.merge(optional_params))
     end
 
-    # Send a generic update to \Mixpanel groups analytics.
+    # Send a generic update to \Greenfinch groups analytics.
     # Caller is responsible for formatting the update message, as
-    # documented in the \Mixpanel HTTP specification, and passing
+    # documented in the \Greenfinch HTTP specification, and passing
     # the message as a dict to #update. This
     # method might be useful if you want to use very new
     # or experimental features of groups analytics from Ruby
-    # The \Mixpanel HTTP tracking API is documented at
-    # https://mixpanel.com/help/reference/http
+    # The \Greenfinch HTTP tracking API is documented at
+    # https://greenfinch.com/help/reference/http
     def update(message)
       data = {
         '$token' => @token,
@@ -178,7 +178,7 @@ module Mixpanel
       ret = true
       begin
         @sink.call(:group_update, message.to_json)
-      rescue MixpanelError => e
+      rescue GreenfinchError => e
         @error_handler.handle(e)
         ret = false
       end

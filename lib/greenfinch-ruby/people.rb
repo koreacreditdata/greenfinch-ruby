@@ -2,25 +2,25 @@ require 'date'
 require 'json'
 require 'time'
 
-require 'mixpanel-ruby/consumer'
-require 'mixpanel-ruby/error'
+require 'greenfinch-ruby/consumer'
+require 'greenfinch-ruby/error'
 
-module Mixpanel
+module Greenfinch
 
-  # Handles formatting Mixpanel profile updates and
+  # Handles formatting Greenfinch profile updates and
   # sending them to the consumer. You will rarely need
   # to instantiate this class directly- to send
-  # profile updates, use Mixpanel::Tracker#people
+  # profile updates, use Greenfinch::Tracker#people
   #
-  #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+  #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
   #     tracker.people.set(...) # Or .append(..), or track_charge(...) etc.
   class People
 
-    # You likely won't need to instantiate instances of Mixpanel::People
-    # directly. The best way to get an instance of Mixpanel::People is
+    # You likely won't need to instantiate instances of Greenfinch::People
+    # directly. The best way to get an instance of Greenfinch::People is
     #
-    #     tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
-    #     tracker.people # An instance of Mixpanel::People
+    #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
+    #     tracker.people # An instance of Greenfinch::People
     #
     def initialize(token, error_handler=nil, &block)
       @token = token
@@ -38,7 +38,7 @@ module Mixpanel
     # keys, and values that are strings, numbers, booleans, or
     # DateTimes
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    # Sets properties on profile with id "1234"
     #    tracker.people.set("1234", {
     #        'company' => 'Acme',
@@ -46,7 +46,7 @@ module Mixpanel
     #        'Sign-Up Date' => DateTime.now
     #    });
     #
-    # If you provide an ip argument, \Mixpanel will use that
+    # If you provide an ip argument, \Greenfinch will use that
     # ip address for geolocation (rather than the ip of your server)
     def set(distinct_id, properties, ip=nil, optional_params={})
       properties = fix_property_dates(properties)
@@ -64,7 +64,7 @@ module Mixpanel
     # in the profile. That means you can call set_once many times
     # without changing an original value.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    tracker.people.set_once("12345", {
     #        'First Login Date': DateTime.now
     #    });
@@ -81,12 +81,12 @@ module Mixpanel
     end
 
     # Changes the value of properties by a numeric amount.  Takes a
-    # hash with string keys and numeric properties. \Mixpanel will add
+    # hash with string keys and numeric properties. \Greenfinch will add
     # the given amount to whatever value is currently assigned to the
     # property. If no property exists with a given name, the value
     # will be added to zero.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    tracker.people.increment("12345", {
     #        'Coins Spent' => 7,
     #        'Coins Earned' => -7, # Use a negative number to subtract
@@ -107,7 +107,7 @@ module Mixpanel
     # by one. Calling #plus_one(distinct_id, property_name) is the same as calling
     # #increment(distinct_id, {property_name => 1})
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    tracker.people.plus_one("12345", "Albums Released")
     #
     def plus_one(distinct_id, property_name, ip=nil, optional_params={})
@@ -118,7 +118,7 @@ module Mixpanel
     # If the given properties don't exist, a new list-valued
     # property will be created.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    tracker.people.append("12345", {
     #        'Login Dates' => DateTime.now,
     #        'Alter Ego Names' => 'Ziggy Stardust'
@@ -141,7 +141,7 @@ module Mixpanel
     # property. After a union, every element in the list associated
     # with a property will be unique.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #    tracker.people.union("12345", {
     #        'Levels Completed' => ['Suffragette City']
     #    });
@@ -159,7 +159,7 @@ module Mixpanel
 
     # Removes properties and their values from a profile.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
     #    # removes a single property and its value from a profile
     #    tracker.people.unset("12345", "Overdue Since")
@@ -179,15 +179,15 @@ module Mixpanel
     end
 
     # Records a payment to you to a profile. Charges recorded with
-    # #track_charge will appear in the \Mixpanel revenue report.
+    # #track_charge will appear in the \Greenfinch revenue report.
     #
-    #    tracker = Mixpanel::Tracker.new(YOUR_MIXPANEL_TOKEN)
+    #    tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
     #    # records a charge of $25.32 from user 12345
     #    tracker.people.track_charge("12345", 25.32)
     #
     #    # records a charge of $30.50 on the 2nd of January,
-    #    mixpanel.people.track_charge("12345", 30.50, {
+    #    greenfinch.people.track_charge("12345", 30.50, {
     #        '$time' => DateTime.parse("Jan 2 2013")
     #    })
     #
@@ -197,12 +197,12 @@ module Mixpanel
       append(distinct_id, {'$transactions' => charge_properties}, ip, optional_params)
     end
 
-    # Clear all charges from a \Mixpanel people profile
+    # Clear all charges from a \Greenfinch people profile
     def clear_charges(distinct_id, ip=nil, optional_params={})
       unset(distinct_id, '$transactions', ip, optional_params)
     end
 
-    # Permanently delete a profile from \Mixpanel people analytics
+    # Permanently delete a profile from \Greenfinch people analytics
     # To delete a user and ignore alias pass into optional params
     #   {"$ignore_alias"=>true}
     def delete_user(distinct_id, optional_params={})
@@ -212,14 +212,14 @@ module Mixpanel
       }.merge(optional_params))
     end
 
-    # Send a generic update to \Mixpanel people analytics.
+    # Send a generic update to \Greenfinch people analytics.
     # Caller is responsible for formatting the update message, as
-    # documented in the \Mixpanel HTTP specification, and passing
+    # documented in the \Greenfinch HTTP specification, and passing
     # the message as a dict to #update. This
     # method might be useful if you want to use very new
     # or experimental features of people analytics from Ruby
-    # The \Mixpanel HTTP tracking API is documented at
-    # https://mixpanel.com/help/reference/http
+    # The \Greenfinch HTTP tracking API is documented at
+    # https://greenfinch.com/help/reference/http
     def update(message)
       data = {
         '$token' => @token,
@@ -231,7 +231,7 @@ module Mixpanel
       ret = true
       begin
         @sink.call(:profile_update, message.to_json)
-      rescue MixpanelError => e
+      rescue GreenfinchError => e
         @error_handler.handle(e)
         ret = false
       end
