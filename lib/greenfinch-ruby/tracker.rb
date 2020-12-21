@@ -52,8 +52,8 @@ module Greenfinch
     # If a block is provided, it is passed a type (one of :event or :profile_update)
     # and a string message. This same format is accepted by Greenfinch::Consumer#send!
     # and Greenfinch::BufferedConsumer#send!
-    def initialize(token, service_name, debug, error_handler=nil, &block)
-      super(token, service_name, debug, error_handler, &block)
+    def initialize(token, service_name, debug, error_handler=nil, use_internal_domain: false, &block)
+      super(token, service_name, debug, error_handler, use_internal_domain: use_internal_domain, &block)
       @token = token
       @service_name = service_name
       @debug = debug

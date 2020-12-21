@@ -88,11 +88,20 @@ module Greenfinch
       jwt_token = decoded_message["jwt_token"]
       service_name = decoded_message["service_name"]
       debug = decoded_message["debug"]
+      use_internal_domain = decoded_message["use_internal_domain"]
 
       if debug == true
-        endpoint = "https://event-staging.kcd.partners/api/publish/#{service_name}"
+        if use_internal_domain
+          endpoint = "https://internal-event-staging.kcd.partners/api/publish/#{service_name}"
+        else
+          endpoint = "https://event-staging.kcd.partners/api/publish/#{service_name}"
+        end
       else
-        endpoint = "#{endpoint}/#{service_name}"
+        if use_internal_domain
+          endpoint = "https://internal-event.kcd.partners/api/publish/#{service_name}"
+        else
+          endpoint = "#{endpoint}/#{service_name}"
+        end
       end
 
       form_data = decoded_message["data"]

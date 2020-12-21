@@ -22,11 +22,12 @@ module Greenfinch
     #     # tracker has all of the methods of Greenfinch::Events
     #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
-    def initialize(token, service_name, debug, error_handler=nil, &block)
+    def initialize(token, service_name, debug, error_handler=nil, use_internal_domain: false, &block)
       @token = token
       @service_name = service_name
       @debug = debug
       @error_handler = error_handler || ErrorHandler.new
+      @use_internal_domain = use_internal_domain
 
       if block
         @sink = block
@@ -71,7 +72,8 @@ module Greenfinch
         'data' => data,
         'jwt_token' => @token,
         'service_name' => @service_name,
-        'debug' => @debug
+        'debug' => @debug,
+        'use_internal_domain' => @use_internal_domain,
       }
 
       ret = true
