@@ -87,13 +87,8 @@ module Greenfinch
       decoded_message = JSON.load(message)
       jwt_token = decoded_message["jwt_token"]
       service_name = decoded_message["service_name"]
-      debug = decoded_message["debug"]
 
-      if debug == true
-        endpoint = "https://event-staging.kcd.partners/api/publish/#{service_name}"
-      else
-        endpoint = "#{endpoint}/#{service_name}"
-      end
+      endpoint = "#{endpoint}/#{service_name}"
 
       form_data = decoded_message["data"]
 

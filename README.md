@@ -1,7 +1,7 @@
 # Greenfinch Ruby Library
 ![](https://upload.wikimedia.org/wikipedia/commons/3/32/Carduelis_chloris_3_%28Marek_Szczepanek%29.jpg)
 
-한국신용데이터 data lake로 서비스 내 각종 event를 전송하는 ruby library 입니다. 
+한국신용데이터 data lake로 서비스 내 각종 event를 전송하는 ruby library 입니다.
 
 ## 설치하기
 ```sh
@@ -21,7 +21,7 @@ ___
 greenfinch tracker를 초기화 하는 함수입니다. 아래와 같이 초기화 후 사용하시기 바랍니다.
 
 ```ruby
-tracker = Greenfinch::Tracker.new('<YOUR TOKEN>', '<YOUR SERVICE>', true)
+tracker = Greenfinch::Tracker.new('<YOUR TOKEN>', '<YOUR SERVICE>', true, use_internal_domain: true)
 ```
 
 | Argument | Type | Description |
@@ -30,6 +30,7 @@ tracker = Greenfinch::Tracker.new('<YOUR TOKEN>', '<YOUR SERVICE>', true)
 | **service_name** | <span class="mp-arg-type">String, </span></br></span><span class="mp-arg-required">required</span> | 부여받은 service name |
 | **debug** | <span class="mp-arg-type">Boolean, </span></br></span><span class="mp-arg-required">required</span> | true: staging, false: production |
 | **error_handler** | <span class="mp-arg-type">Greenfinch::ErrorHandler, </span></br></span><span class="mp-arg-required">optional</span> | error handler |
+| **use_internal_domain** | <span class="mp-arg-type">Boolean, </span></br></span><span class="mp-arg-required">optional</span> | true: internal (private) domain, false: public domain |
 
 
 ___

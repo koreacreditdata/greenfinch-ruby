@@ -22,16 +22,30 @@ module Greenfinch
     #     # tracker has all of the methods of Greenfinch::Events
     #     tracker = Greenfinch::Tracker.new(YOUR_GREENFINCH_TOKEN)
     #
-    def initialize(token, service_name, debug, error_handler=nil, &block)
+    def initialize(token, service_name, debug, error_handler=nil, use_internal_domain: false, &block)
       @token = token
       @service_name = service_name
-      @debug = debug
       @error_handler = error_handler || ErrorHandler.new
+
+      events_endpoint =
+        if debug
+          if use_internal_domain
+            "https://internal-event-staging.kcd.partners/api/publish"
+          else
+            "https://event-staging.kcd.partners/api/publish"
+          end
+        else
+          if use_internal_domain
+            "https://internal-event.kcd.partners/api/publish"
+          else
+            "https://event.kcd.partners/api/publish"
+          end
+        end
 
       if block
         @sink = block
       else
-        consumer = Consumer.new
+        consumer = Consumer.new(events_endpoint)
         @sink = consumer.method(:send!)
       end
     end
@@ -71,7 +85,6 @@ module Greenfinch
         'data' => data,
         'jwt_token' => @token,
         'service_name' => @service_name,
-        'debug' => @debug
       }
 
       ret = true
